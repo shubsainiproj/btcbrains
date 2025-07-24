@@ -1,0 +1,12 @@
+{
+  "name": "btc-address-tool-pro",
+  "version": "1.0.0",
+  "description": "Client-side Bitcoin address generator with enhanced UI and functionality",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
