@@ -9,6 +9,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" />
   
+  <!-- QR Code Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
   <style>
     :root {
       --bg-primary: #0a0b0f;
@@ -72,7 +75,6 @@
       66% { transform: translate(-20px, 20px) rotate(-1deg); }
     }
 
-    /* Container */
     .container {
       max-width: 1200px;
       margin: 0 auto;
@@ -83,7 +85,6 @@
       gap: 2rem;
     }
 
-    /* Header */
     .header {
       text-align: center;
       margin-bottom: 2rem;
@@ -114,7 +115,6 @@
       font-weight: 500;
     }
 
-    /* Main Content */
     .main-content {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -122,7 +122,6 @@
       flex: 1;
     }
 
-    /* Card Styles */
     .card {
       background: var(--bg-glass);
       border: 1px solid rgba(255, 255, 255, 0.1);
@@ -152,7 +151,6 @@
       border-color: rgba(59, 130, 246, 0.3);
     }
 
-    /* Input Section */
     .input-section {
       display: flex;
       flex-direction: column;
@@ -234,7 +232,14 @@
       color: var(--accent-primary);
     }
 
-    /* Output Section */
+    select.input {
+      appearance: none;
+      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="%23b4b9c7"><polygon points="0,0 10,0 5,5"/></svg>');
+      background-repeat: no-repeat;
+      background-position: right 1rem top 50%;
+      padding-right: 2.5rem;
+    }
+
     .output-section {
       display: flex;
       flex-direction: column;
@@ -310,6 +315,9 @@
       font-weight: 500;
       margin: 0.5rem 0;
       word-break: break-all;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
     }
 
     .output-random {
@@ -344,7 +352,6 @@
       100% { transform: rotate(360deg); }
     }
 
-    /* Donation Section */
     .donation-section {
       margin-top: 2rem;
       background: var(--bg-glass);
@@ -434,7 +441,6 @@
       box-shadow: 0 20px 40px rgba(59, 130, 246, 0.3);
     }
 
-    /* Responsive Design */
     @media (max-width: 768px) {
       .container {
         padding: 1rem;
@@ -507,7 +513,6 @@
       }
     }
 
-    /* Toast Notification */
     .toast {
       position: fixed;
       top: 2rem;
@@ -567,12 +572,40 @@
         </div>
 
         <div class="input-group">
-          <div class="input-label">Random Generation</div>
+          <div class="input-label">Address Type</div>
+          <select id="addressType" class="input">
+            <option value="p2pkh">P2PKH (Legacy)</option>
+            <option value="p2sh">P2SH (SegWit Compatible)</option>
+            <option value="p2wpkh">Bech32 (SegWit)</option>
+            <option value="p2tr">Taproot</option>
+          </select>
+        </div>
+
+        <div class="input-group">
+          <div class="input-label">Derivation Path (for seed phrase)</div>
           <div class="input-wrapper">
-            <i class="fas fa-dice input-icon"></i>
-            <input id="randomInput" class="input" placeholder="Enter random word or phrase">
+            <i class="fas fa-route input-icon"></i>
+            <input id="derivationPath" class="input" value="m/44'/0'/0'/0" placeholder="Enter derivation path">
           </div>
         </div>
+
+        <div class="input-group">
+          <div class="input-label">Number of Addresses (for seed or random)</div>
+          <div class="input-wrapper">
+            <i class="fas fa-list-ol input-icon"></i>
+            <input id="batchSize" class="input" type="number" min="1" max="100" value="1">
+          </div>
+        </div>
+
+        <button class="copy-btn" style="margin-top: 1rem;" onclick="generateAddresses()">
+          <i class="fas fa-cogs"></i>
+          Generate
+        </button>
+
+        <button class="copy-btn" style="margin-top: 1rem;" onclick="generateRandomAddresses()">
+          <i class="fas fa-dice"></i>
+          Generate Random
+        </button>
       </div>
 
       <!-- Output Section -->
@@ -591,10 +624,29 @@
         <div id="output" class="output">
           <div class="output-heading">Ready to generate addresses...</div>
           <div style="color: var(--text-muted); font-style: italic;">
-            Enter a seed phrase, private key, or random word above to begin generating Bitcoin addresses.
+            Enter a seed phrase, private key, or click "Generate Random" to begin generating Bitcoin addresses.
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Validation Section -->
+    <div class="card" style="margin-top: 2rem;">
+      <div class="section-title">
+        <i class="fas fa-check-circle"></i>
+        Validate Bitcoin Address
+      </div>
+      <div class="input-group">
+        <div class="input-wrapper">
+          <i class="fas fa-wallet input-icon"></i>
+          <input id="validateInput" class="input" placeholder="Enter Bitcoin address to validate">
+        </div>
+      </div>
+      <button class="copy-btn" onclick="validateAddress()">
+        <i class="fas fa-check"></i>
+        Validate
+      </button>
+      <div id="validationResult" style="margin-top: 1rem; color: var(--text-secondary);"></div>
     </div>
 
     <!-- Donation Section -->
@@ -615,7 +667,7 @@
           <i class="fab fa-ethereum"></i>
           Donate Ethereum
         </button>
-        <a href="https://github.com/yourusername/btc-tool" class="donate-btn" target="_blank">
+        <a href="https://github.com/Shubsaini08" class="donate-btn" target="_blank">
           <i class="fab fa-github"></i>
           Star on GitHub
         </a>
@@ -638,67 +690,85 @@
       );
 
       self.onmessage = ({ data }) => {
-        const { seed, key, random } = data;
+        const { type, seed, key, addressType, derivationPath, batchSize } = data;
         let lines = [];
         try {
           const network = bitcoin.networks.bitcoin;
-          
-          if (seed) {
-            lines.push('🌱 Addresses from Seed Phrase:');
+
+          if (type === 'generate') {
+            if (key) {
+              lines.push('🔑 Address from Private Key:');
+              lines.push('');
+
+              let keyPair;
+              if (/^[0-9a-fA-F]{64}$/.test(key)) {
+                keyPair = bitcoin.ECPair.fromPrivateKey(Buffer.from(key, 'hex'), { network });
+              } else if (/^[5KL][1-9A-HJ-NP-Za-km-z]{50,51}$/.test(key)) {
+                keyPair = bitcoin.ECPair.fromWIF(key, network);
+              } else if (/^\\d+$/.test(key)) {
+                const keyBuffer = Buffer.alloc(32);
+                keyBuffer.writeBigUInt64BE(BigInt(key), 24);
+                keyPair = bitcoin.ECPair.fromPrivateKey(keyBuffer, { network });
+              } else {
+                throw new Error('Invalid private key format');
+              }
+
+              const address = getAddress(keyPair, addressType, network);
+              const wif = keyPair.toWIF();
+
+              lines.push(\`Address: \${address}\`);
+              lines.push(\`WIF: \${wif}\`);
+            } else if (seed) {
+              lines.push('🌱 Addresses from Seed Phrase:');
+              lines.push('');
+
+              const seedBuffer = bip39.mnemonicToSeedSync(seed);
+              const root = bitcoin.bip32.fromSeed(seedBuffer, network);
+
+              for (let i = 0; i < batchSize; i++) {
+                const path = derivationPath.replace(/\\/$/g, '') + \`/\${i}\`;
+                const child = root.derivePath(path);
+                const address = getAddress(child, addressType, network);
+                lines.push(\`Address \${i + 1}: \${address}\`);
+              }
+            }
+          } else if (type === 'random') {
+            lines.push('🎲 Randomly Generated Addresses:');
             lines.push('');
-            const seedBuffer = bitcoin.bip39.mnemonicToSeedSync(seed);
-            const root = bitcoin.bip32.fromSeed(seedBuffer, network);
-            
-            for (let i = 0; i < 10; i++) {
-              const child = root.derivePath(\`m/44'/0'/0'/0/\${i}\`);
-              const address = bitcoin.payments.p2pkh({ pubkey: child.publicKey, network }).address;
+
+            for (let i = 0; i < batchSize; i++) {
+              const keyPair = bitcoin.ECPair.makeRandom({ network });
+              const address = getAddress(keyPair, addressType, network);
+              const wif = keyPair.toWIF();
+              const hex = keyPair.privateKey.toString('hex');
+
               lines.push(\`Address \${i + 1}: \${address}\`);
+              lines.push(\`WIF: \${wif}\`);
+              lines.push(\`Hex Private Key: \${hex}\`);
+              lines.push('');
             }
           }
-          
-          if (key) {
-            if (lines.length > 0) lines.push('');
-            lines.push('🔑 Address from Private Key:');
-            lines.push('');
-            
-            let keyPair;
-            if (/^[0-9a-fA-F]{64}$/.test(key)) {
-              // Hex format
-              keyPair = bitcoin.ECPair.fromPrivateKey(Buffer.from(key, 'hex'), { network });
-            } else if (/^[5KL][1-9A-HJ-NP-Za-km-z]{50,51}$/.test(key)) {
-              // WIF format
-              keyPair = bitcoin.ECPair.fromWIF(key, network);
-            } else if (/^\d+$/.test(key)) {
-              // Decimal format
-              const keyBuffer = Buffer.alloc(32);
-              keyBuffer.writeBigUInt64BE(BigInt(key), 24);
-              keyPair = bitcoin.ECPair.fromPrivateKey(keyBuffer, { network });
-            } else {
-              throw new Error('Invalid private key format');
-            }
-            
-            const address = bitcoin.payments.p2pkh({ pubkey: keyPair.publicKey, network }).address;
-            const wif = keyPair.toWIF();
-            
-            lines.push(\`Address: \${address}\`);
-            lines.push(\`WIF: \${wif}\`);
-          }
-          
-          if (random) {
-            if (lines.length > 0) lines.push('');
-            lines.push('🎲 Random Generation Info:');
-            lines.push('');
-            lines.push(\`Input: \${random}\`);
-            lines.push(\`Length: \${random.length} characters\`);
-            lines.push(\`Hash: \${random.split('').reduce((a, b) => a + b.charCodeAt(0), 0)}\`);
-          }
-          
         } catch (err) {
           lines = [\`❌ Error: \${err.message}\`];
         }
-        
+
         self.postMessage(lines.join('\\n'));
       };
+
+      function getAddress(keyPair, type, network) {
+        if (type === 'p2pkh') {
+          return bitcoin.payments.p2pkh({ pubkey: keyPair.publicKey, network }).address;
+        } else if (type === 'p2sh') {
+          const p2wpkh = bitcoin.payments.p2wpkh({ pubkey: keyPair.publicKey, network });
+          return bitcoin.payments.p2sh({ redeem: p2wpkh, network }).address;
+        } else if (type === 'p2wpkh') {
+          return bitcoin.payments.p2wpkh({ pubkey: keyPair.publicKey, network }).address;
+        } else if (type === 'p2tr') {
+          return bitcoin.payments.p2tr({ internalPubkey: keyPair.publicKey.slice(1, 33), network }).address;
+        } else {
+          throw new Error('Unsupported address type');
+        }
+      }
     `;
 
     const blob = new Blob([workerScript], { type: 'application/javascript' });
@@ -707,38 +777,9 @@
     // DOM elements
     const seedInput = document.getElementById('seedInput');
     const pkInput = document.getElementById('privateKeyInput');
-    const randomInput = document.getElementById('randomInput');
     const output = document.getElementById('output');
     const toast = document.getElementById('toast');
     const toastMessage = document.getElementById('toast-message');
-
-    // Process inputs
-    function process() {
-      const seed = seedInput.value.trim();
-      const key = pkInput.value.trim();
-      const rnd = randomInput.value.trim();
-      
-      if (!seed && !key && !rnd) {
-        output.innerHTML = `
-          <div class="output-heading">Ready to generate addresses...</div>
-          <div style="color: var(--text-muted); font-style: italic;">
-            Enter a seed phrase, private key, or random word above to begin generating Bitcoin addresses.
-          </div>
-        `;
-        return;
-      }
-      
-      renderStatus('Generating addresses...');
-      worker.postMessage({ seed, key, random: rnd });
-    }
-
-    // Event listeners with debouncing
-    seedInput.addEventListener('input', debounce(process, 500));
-    pkInput.addEventListener('input', debounce(process, 500));
-    randomInput.addEventListener('input', debounce(process, 500));
-
-    // Worker message handler
-    worker.onmessage = (e) => renderResult(e.data);
 
     // Render functions
     function renderStatus(text) {
@@ -751,27 +792,70 @@
     }
 
     function renderResult(data) {
-      const lines = data.split('\\n');
+      const lines = data.split('\n');
       let html = '';
-      
+
       lines.forEach(line => {
         if (line.trim() === '') {
           html += '<br>';
         } else if (line.includes('Error:')) {
-          html += \`<div class="output-error">\${line}</div>\`;
+          html += `<div class="output-error">${line}</div>`;
         } else if (line.includes('Address')) {
-          html += \`<div class="output-address">\${line}</div>\`;
-        } else if (line.includes('🎲') || line.includes('Input:') || line.includes('Length:') || line.includes('Hash:')) {
-          html += \`<div class="output-random">\${line}</div>\`;
-        } else if (line.includes('🌱') || line.includes('🔑')) {
-          html += \`<div class="output-heading">\${line}</div>\`;
+          const address = line.split(': ')[1];
+          html += `<div class="output-address">${line} <button class="copy-btn" onclick="showQR('${address}')"><i class="fas fa-qrcode"></i> QR</button></div>`;
+        } else if (line.includes('🎲') || line.includes('🌱') || line.includes('🔑')) {
+          html += `<div class="output-heading">${line}</div>`;
         } else {
-          html += \`<div>\${line}</div>\`;
+          html += `<div>${line}</div>`;
         }
       });
-      
+
       output.innerHTML = html;
     }
+
+    function renderError(message) {
+      output.innerHTML = `<div class="output-error">❌ ${message}</div>`;
+    }
+
+    // Generate addresses
+    function generateAddresses() {
+      const seed = seedInput.value.trim();
+      const key = pkInput.value.trim();
+      const addressType = document.getElementById('addressType').value;
+      const derivationPath = document.getElementById('derivationPath').value;
+      const batchSize = parseInt(document.getElementById('batchSize').value) || 1;
+
+      if (!seed && !key) {
+        renderError('Please provide a seed phrase or private key');
+        return;
+      }
+
+      renderStatus('Generating addresses...');
+      worker.postMessage({
+        type: 'generate',
+        seed,
+        key,
+        addressType,
+        derivationPath,
+        batchSize
+      });
+    }
+
+    // Generate random addresses
+    function generateRandomAddresses() {
+      const addressType = document.getElementById('addressType').value;
+      const batchSize = parseInt(document.getElementById('batchSize').value) || 1;
+
+      renderStatus('Generating random addresses...');
+      worker.postMessage({
+        type: 'random',
+        addressType,
+        batchSize
+      });
+    }
+
+    // Worker message handler
+    worker.onmessage = (e) => renderResult(e.data);
 
     // Copy functionality
     function copyOutput() {
@@ -783,12 +867,59 @@
       });
     }
 
+    // Validate address
+    function validateAddress() {
+      const address = document.getElementById('validateInput').value.trim();
+      if (!address) {
+        document.getElementById('validationResult').textContent = 'Please enter an address';
+        document.getElementById('validationResult').style.color = 'var(--error)';
+        return;
+      }
+
+      try {
+        bitcoin.address.toOutputScript(address, bitcoin.networks.bitcoin);
+        document.getElementById('validationResult').textContent = 'Valid Bitcoin address';
+        document.getElementById('validationResult').style.color = 'var(--success)';
+      } catch (e) {
+        document.getElementById('validationResult').textContent = 'Invalid Bitcoin address';
+        document.getElementById('validationResult').style.color = 'var(--error)';
+      }
+    }
+
+    // Show QR code
+    function showQR(address) {
+      const qrContainer = document.createElement('div');
+      qrContainer.style.position = 'fixed';
+      qrContainer.style.top = '50%';
+      qrContainer.style.left = '50%';
+      qrContainer.style.transform = 'translate(-50%, -50%)';
+      qrContainer.style.background = 'white';
+      qrContainer.style.padding = '1rem';
+      qrContainer.style.boxShadow = 'var(--shadow-xl)';
+      qrContainer.style.zIndex = '1000';
+
+      new QRCode(qrContainer, {
+        text: address,
+        width: 256,
+        height: 256,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+      });
+
+      document.body.appendChild(qrContainer);
+
+      qrContainer.addEventListener('click', () => {
+        document.body.removeChild(qrContainer);
+      });
+    }
+
     // Toast notification
     function showToast(message, type = 'success') {
       toastMessage.textContent = message;
       toast.style.backgroundColor = type === 'error' ? 'var(--error)' : 'var(--success)';
       toast.classList.add('show');
-      
+
       setTimeout(() => {
         toast.classList.remove('show');
       }, 3000);
@@ -797,33 +928,17 @@
     // Donation addresses
     function showDonationAddress(crypto) {
       const addresses = {
-        bitcoin: '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
-        ethereum: '0x742d35Cc6634C0532925a3b8D8Df42D0a98a4e5a'
+        bitcoin: 'bc1qwc24wqwu08x2cdnfzc40ezma4q5zsn37jxkkmt',
+        ethereum: '0x7cd3b4101e20431815b27849140db3853f86d330'
       };
-      
+
       const address = addresses[crypto];
       if (address) {
         navigator.clipboard.writeText(address).then(() => {
-          showToast(\`\${crypto.charAt(0).toUpperCase() + crypto.slice(1)} address copied!\`);
+          showToast(`${crypto.charAt(0).toUpperCase() + crypto.slice(1)} address copied!`);
         });
       }
     }
-
-    // Utility functions
-    function debounce(func, wait) {
-      let timeout;
-      return function executedFunction(...args) {
-        const later = () => {
-          clearTimeout(timeout);
-          func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-      };
-    }
-
-    // Initialize
-    process();
   </script>
 </body>
 </html>
