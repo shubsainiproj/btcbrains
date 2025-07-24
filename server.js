@@ -1,18 +1,34 @@
 const express = require('express');
 const path = require('path');
-const app = express();
 
-// Use Render's PORT or default to 3000 (useful for local dev)
+const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Serve static files from the 'public' directory
-app.use(express.static(path.join(__dirname, 'public')));
-
-// For SPA (optional fallback if using hash routing)
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+// 🔒 Optional: Security headers
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  next();
 });
 
+// 🔁 Force HTTPS on Render
+app.use((req, res, next) => {
+  if (req.headers['x-forwarded-proto'] !== 'https') {
+    return res.redirect('https://' + req.headers.host + req.url);
+  }
+  next();
+});
+
+// 🌐 Serve all static files from current directory
+app.use(express.static(__dirname));
+
+// 🧭 Fallback route for SPAs or undefined paths
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// 🚀 Start server
 app.listen(PORT, () => {
-  console.log(`BTC Address Tool Pro running on port ${PORT}`);
+  console.log(`✅ BTC Address Tool Pro running on port ${PORT}`);
 });
