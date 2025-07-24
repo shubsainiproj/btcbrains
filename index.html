@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BTC Address Tool Pro</title>
+  
+  <!-- Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" />
+  
+  <style>
+    :root {
+      --bg-primary: #0a0b0f;
+      --bg-secondary: #1a1d24;
+      --bg-tertiary: #262933;
+      --bg-glass: rgba(26, 29, 36, 0.8);
+      --text-primary: #ffffff;
+      --text-secondary: #b4b9c7;
+      --text-muted: #6b7280;
+      --accent-primary: #3b82f6;
+      --accent-secondary: #8b5cf6;
+      --accent-gradient: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #f59e0b 100%);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --error: #ef4444;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+      --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+      --border-radius: 12px;
+      --border-radius-lg: 16px;
+      --border-radius-xl: 20px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Animated Background */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: 
+        radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 75% 75%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
+        radial-gradient(circle at 50% 50%, rgba(245, 158, 11, 0.1) 0%, transparent 50%);
+      animation: bgFloat 20s ease-in-out infinite;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    @keyframes bgFloat {
+      0%, 100% { transform: translate(0, 0) rotate(0deg); }
+      33% { transform: translate(30px, -30px) rotate(1deg); }
+      66% { transform: translate(-20px, 20px) rotate(-1deg); }
+    }
+
+    /* Container */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 1rem;
+      font-size: 3rem;
+      font-weight: 800;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 1rem;
+      animation: glow 3s ease-in-out infinite alternate;
+    }
+
+    @keyframes glow {
+      from { filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.5)); }
+      to { filter: drop-shadow(0 0 30px rgba(139, 92, 246, 0.7)); }
+    }
+
+    .subtitle {
+      font-size: 1.25rem;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    /* Main Content */
+    .main-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      flex: 1;
+    }
+
+    /* Card Styles */
+    .card {
+      background: var(--bg-glass);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--border-radius-xl);
+      padding: 2rem;
+      backdrop-filter: blur(20px);
+      box-shadow: var(--shadow-2xl);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: var(--accent-gradient);
+      opacity: 0.5;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 32px 64px -12px rgba(0, 0, 0, 0.4);
+      border-color: rgba(59, 130, 246, 0.3);
+    }
+
+    /* Input Section */
+    .input-section {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .section-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .section-title i {
+      font-size: 1.25rem;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .input-group {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .input-label {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-icon {
+      position: absolute;
+      left: 1rem;
+      font-size: 1.125rem;
+      color: var(--text-muted);
+      transition: color 0.3s ease;
+      z-index: 2;
+    }
+
+    .input {
+      width: 100%;
+      padding: 1rem 1rem 1rem 3rem;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--border-radius);
+      color: var(--text-primary);
+      font-size: 1rem;
+      font-weight: 500;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      outline: none;
+    }
+
+    .input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .input:focus {
+      border-color: var(--accent-primary);
+      background: rgba(59, 130, 246, 0.1);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .input:focus + .input-icon {
+      color: var(--accent-primary);
+    }
+
+    /* Output Section */
+    .output-section {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .output-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .copy-btn {
+      background: var(--accent-gradient);
+      border: none;
+      border-radius: var(--border-radius);
+      padding: 0.75rem 1.5rem;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .copy-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .copy-btn:active {
+      transform: translateY(0);
+    }
+
+    .output {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--border-radius);
+      padding: 1.5rem;
+      min-height: 400px;
+      max-height: 500px;
+      overflow-y: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.875rem;
+      line-height: 1.6;
+      position: relative;
+    }
+
+    .output::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .output::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .output::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 3px;
+    }
+
+    .output-heading {
+      color: var(--accent-primary);
+      font-weight: 600;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .output-address {
+      color: var(--success);
+      font-weight: 500;
+      margin: 0.5rem 0;
+      word-break: break-all;
+    }
+
+    .output-random {
+      color: var(--warning);
+      font-weight: 500;
+      margin: 0.5rem 0;
+    }
+
+    .output-error {
+      color: var(--error);
+      font-weight: 500;
+    }
+
+    .loading {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--text-secondary);
+    }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-top: 2px solid var(--accent-primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Donation Section */
+    .donation-section {
+      margin-top: 2rem;
+      background: var(--bg-glass);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--border-radius-xl);
+      padding: 2rem;
+      backdrop-filter: blur(20px);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .donation-section::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--accent-gradient);
+      animation: shimmer 2s ease-in-out infinite;
+    }
+
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    .donation-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .donation-text {
+      color: var(--text-secondary);
+      margin-bottom: 2rem;
+      font-size: 1.1rem;
+    }
+
+    .donation-buttons {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .donate-btn {
+      background: var(--accent-gradient);
+      border: none;
+      border-radius: var(--border-radius);
+      padding: 1rem 2rem;
+      color: white;
+      font-weight: 600;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .donate-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: left 0.5s;
+    }
+
+    .donate-btn:hover::before {
+      left: 100%;
+    }
+
+    .donate-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 20px 40px rgba(59, 130, 246, 0.3);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .container {
+        padding: 1rem;
+        gap: 1.5rem;
+      }
+
+      .logo {
+        font-size: 2rem;
+      }
+
+      .subtitle {
+        font-size: 1rem;
+      }
+
+      .main-content {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+      }
+
+      .card {
+        padding: 1.5rem;
+      }
+
+      .section-title {
+        font-size: 1.25rem;
+      }
+
+      .output {
+        min-height: 300px;
+        max-height: 400px;
+      }
+
+      .donation-buttons {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .donate-btn {
+        width: 100%;
+        max-width: 300px;
+        justify-content: center;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 0.75rem;
+      }
+
+      .card {
+        padding: 1rem;
+      }
+
+      .input {
+        padding: 0.875rem 0.875rem 0.875rem 2.5rem;
+      }
+
+      .input-icon {
+        left: 0.75rem;
+        font-size: 1rem;
+      }
+
+      .output {
+        padding: 1rem;
+        font-size: 0.8rem;
+      }
+
+      .donation-section {
+        padding: 1.5rem;
+      }
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      top: 2rem;
+      right: 2rem;
+      background: var(--success);
+      color: white;
+      padding: 1rem 1.5rem;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow-xl);
+      transform: translateX(100%);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .toast.show {
+      transform: translateX(0);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="logo">
+        <i class="fab fa-bitcoin"></i>
+        BTC Address Tool Pro
+      </div>
+      <div class="subtitle">Advanced Bitcoin Address Generation & Management</div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Input Section -->
+      <div class="card input-section">
+        <div class="section-title">
+          <i class="fas fa-tools"></i>
+          Input Methods
+        </div>
+
+        <div class="input-group">
+          <div class="input-label">Seed Phrase (Mnemonic)</div>
+          <div class="input-wrapper">
+            <i class="fas fa-seedling input-icon"></i>
+            <input id="seedInput" class="input" placeholder="Enter your 12/24 word seed phrase">
+          </div>
+        </div>
+
+        <div class="input-group">
+          <div class="input-label">Private Key / WIF / Decimal</div>
+          <div class="input-wrapper">
+            <i class="fas fa-key input-icon"></i>
+            <input id="privateKeyInput" class="input" placeholder="Enter private key in any format">
+          </div>
+        </div>
+
+        <div class="input-group">
+          <div class="input-label">Random Generation</div>
+          <div class="input-wrapper">
+            <i class="fas fa-dice input-icon"></i>
+            <input id="randomInput" class="input" placeholder="Enter random word or phrase">
+          </div>
+        </div>
+      </div>
+
+      <!-- Output Section -->
+      <div class="card output-section">
+        <div class="output-header">
+          <div class="section-title">
+            <i class="fas fa-wallet"></i>
+            Generated Addresses
+          </div>
+          <button class="copy-btn" onclick="copyOutput()">
+            <i class="fas fa-copy"></i>
+            Copy All
+          </button>
+        </div>
+
+        <div id="output" class="output">
+          <div class="output-heading">Ready to generate addresses...</div>
+          <div style="color: var(--text-muted); font-style: italic;">
+            Enter a seed phrase, private key, or random word above to begin generating Bitcoin addresses.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Donation Section -->
+    <div class="donation-section">
+      <div class="donation-title">
+        <i class="fas fa-heart" style="color: #ef4444;"></i>
+        Support Development
+      </div>
+      <div class="donation-text">
+        If this tool has been helpful, consider supporting its development with a small donation
+      </div>
+      <div class="donation-buttons">
+        <button class="donate-btn" onclick="showDonationAddress('bitcoin')">
+          <i class="fab fa-bitcoin"></i>
+          Donate Bitcoin
+        </button>
+        <button class="donate-btn" onclick="showDonationAddress('ethereum')">
+          <i class="fab fa-ethereum"></i>
+          Donate Ethereum
+        </button>
+        <a href="https://github.com/yourusername/btc-tool" class="donate-btn" target="_blank">
+          <i class="fab fa-github"></i>
+          Star on GitHub
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast">
+    <i class="fas fa-check-circle"></i>
+    <span id="toast-message">Copied to clipboard!</span>
+  </div>
+
+  <script>
+    // Worker setup
+    const workerScript = `
+      importScripts(
+        'https://cdnjs.cloudflare.com/ajax/libs/bitcoinjs-lib/6.1.0/bitcoinjs.min.js',
+        'https://cdnjs.cloudflare.com/ajax/libs/bip39/3.0.4/bip39.min.js'
+      );
+
+      self.onmessage = ({ data }) => {
+        const { seed, key, random } = data;
+        let lines = [];
+        try {
+          const network = bitcoin.networks.bitcoin;
+          
+          if (seed) {
+            lines.push('🌱 Addresses from Seed Phrase:');
+            lines.push('');
+            const seedBuffer = bitcoin.bip39.mnemonicToSeedSync(seed);
+            const root = bitcoin.bip32.fromSeed(seedBuffer, network);
+            
+            for (let i = 0; i < 10; i++) {
+              const child = root.derivePath(\`m/44'/0'/0'/0/\${i}\`);
+              const address = bitcoin.payments.p2pkh({ pubkey: child.publicKey, network }).address;
+              lines.push(\`Address \${i + 1}: \${address}\`);
+            }
+          }
+          
+          if (key) {
+            if (lines.length > 0) lines.push('');
+            lines.push('🔑 Address from Private Key:');
+            lines.push('');
+            
+            let keyPair;
+            if (/^[0-9a-fA-F]{64}$/.test(key)) {
+              // Hex format
+              keyPair = bitcoin.ECPair.fromPrivateKey(Buffer.from(key, 'hex'), { network });
+            } else if (/^[5KL][1-9A-HJ-NP-Za-km-z]{50,51}$/.test(key)) {
+              // WIF format
+              keyPair = bitcoin.ECPair.fromWIF(key, network);
+            } else if (/^\d+$/.test(key)) {
+              // Decimal format
+              const keyBuffer = Buffer.alloc(32);
+              keyBuffer.writeBigUInt64BE(BigInt(key), 24);
+              keyPair = bitcoin.ECPair.fromPrivateKey(keyBuffer, { network });
+            } else {
+              throw new Error('Invalid private key format');
+            }
+            
+            const address = bitcoin.payments.p2pkh({ pubkey: keyPair.publicKey, network }).address;
+            const wif = keyPair.toWIF();
+            
+            lines.push(\`Address: \${address}\`);
+            lines.push(\`WIF: \${wif}\`);
+          }
+          
+          if (random) {
+            if (lines.length > 0) lines.push('');
+            lines.push('🎲 Random Generation Info:');
+            lines.push('');
+            lines.push(\`Input: \${random}\`);
+            lines.push(\`Length: \${random.length} characters\`);
+            lines.push(\`Hash: \${random.split('').reduce((a, b) => a + b.charCodeAt(0), 0)}\`);
+          }
+          
+        } catch (err) {
+          lines = [\`❌ Error: \${err.message}\`];
+        }
+        
+        self.postMessage(lines.join('\\n'));
+      };
+    `;
+
+    const blob = new Blob([workerScript], { type: 'application/javascript' });
+    const worker = new Worker(URL.createObjectURL(blob));
+
+    // DOM elements
+    const seedInput = document.getElementById('seedInput');
+    const pkInput = document.getElementById('privateKeyInput');
+    const randomInput = document.getElementById('randomInput');
+    const output = document.getElementById('output');
+    const toast = document.getElementById('toast');
+    const toastMessage = document.getElementById('toast-message');
+
+    // Process inputs
+    function process() {
+      const seed = seedInput.value.trim();
+      const key = pkInput.value.trim();
+      const rnd = randomInput.value.trim();
+      
+      if (!seed && !key && !rnd) {
+        output.innerHTML = `
+          <div class="output-heading">Ready to generate addresses...</div>
+          <div style="color: var(--text-muted); font-style: italic;">
+            Enter a seed phrase, private key, or random word above to begin generating Bitcoin addresses.
+          </div>
+        `;
+        return;
+      }
+      
+      renderStatus('Generating addresses...');
+      worker.postMessage({ seed, key, random: rnd });
+    }
+
+    // Event listeners with debouncing
+    seedInput.addEventListener('input', debounce(process, 500));
+    pkInput.addEventListener('input', debounce(process, 500));
+    randomInput.addEventListener('input', debounce(process, 500));
+
+    // Worker message handler
+    worker.onmessage = (e) => renderResult(e.data);
+
+    // Render functions
+    function renderStatus(text) {
+      output.innerHTML = `
+        <div class="loading">
+          <div class="spinner"></div>
+          ${text}
+        </div>
+      `;
+    }
+
+    function renderResult(data) {
+      const lines = data.split('\\n');
+      let html = '';
+      
+      lines.forEach(line => {
+        if (line.trim() === '') {
+          html += '<br>';
+        } else if (line.includes('Error:')) {
+          html += \`<div class="output-error">\${line}</div>\`;
+        } else if (line.includes('Address')) {
+          html += \`<div class="output-address">\${line}</div>\`;
+        } else if (line.includes('🎲') || line.includes('Input:') || line.includes('Length:') || line.includes('Hash:')) {
+          html += \`<div class="output-random">\${line}</div>\`;
+        } else if (line.includes('🌱') || line.includes('🔑')) {
+          html += \`<div class="output-heading">\${line}</div>\`;
+        } else {
+          html += \`<div>\${line}</div>\`;
+        }
+      });
+      
+      output.innerHTML = html;
+    }
+
+    // Copy functionality
+    function copyOutput() {
+      const text = output.textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('Copied to clipboard!');
+      }).catch(() => {
+        showToast('Failed to copy', 'error');
+      });
+    }
+
+    // Toast notification
+    function showToast(message, type = 'success') {
+      toastMessage.textContent = message;
+      toast.style.backgroundColor = type === 'error' ? 'var(--error)' : 'var(--success)';
+      toast.classList.add('show');
+      
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+
+    // Donation addresses
+    function showDonationAddress(crypto) {
+      const addresses = {
+        bitcoin: '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
+        ethereum: '0x742d35Cc6634C0532925a3b8D8Df42D0a98a4e5a'
+      };
+      
+      const address = addresses[crypto];
+      if (address) {
+        navigator.clipboard.writeText(address).then(() => {
+          showToast(\`\${crypto.charAt(0).toUpperCase() + crypto.slice(1)} address copied!\`);
+        });
+      }
+    }
+
+    // Utility functions
+    function debounce(func, wait) {
+      let timeout;
+      return function executedFunction(...args) {
+        const later = () => {
+          clearTimeout(timeout);
+          func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+      };
+    }
+
+    // Initialize
+    process();
+  </script>
+</body>
+</html>
