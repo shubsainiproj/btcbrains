@@ -10,7 +10,7 @@ const ENV = process.env.NODE_ENV || 'development';
 // Middleware
 app.use(helmet()); // Full security headers (HSTS, CSP, etc.)
 app.use(morgan('combined')); // Detailed logging
-app.use(express.static(path.join(__dirname, 'public'), {
+app.use(express.static(path.join(__dirname), {
   maxAge: '1d', // Cache static assets for 1 day
   etag: true
 }));
@@ -32,7 +32,7 @@ app.get('/healthz', (req, res) => {
 
 // Serve index.html for specific routes
 app.get(['/', '/index.html'], (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // Error handler
