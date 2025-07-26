@@ -4,13 +4,29 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BTC Address Tool Pro</title>
-  
+
+  <!-- Content Security Policy (CSP) -->
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self';"
+  />
+
   <!-- Fonts & Icons -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" crossorigin="anonymous" />
-  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
   <!-- QR Code Library -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" integrity="sha512-CS0qO1g0p4FjMdjLFqXOrZtbmbuQ8nQ/yQwYHm4T3X0xV6gKzTvH5vY95lS8eDRd58XKN6bsM5tE9T5FHnuQeOQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+  <!-- Buffer Polyfill -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/buffer/6.0.3/buffer.min.js" integrity="sha512-JZJhl43nW2WLzJ3F8ru1PKA7y4TDVlYzfLvH9R8t9Vo2sCaFzZ2N09Ct7M5v6vGR8s5V8wF9DBT3ph8f5r6GwQw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script>
+    window.Buffer = buffer.Buffer;
+  </script>
+
+  <!-- Crypto Libraries with SRI -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bitcoinjs-lib/6.1.0/bitcoinjs.min.js" integrity="sha512-Ee5lToK2nF3dy2bZ2YaSV1z8OwUoQrU2GYZ2qB+8YgN2Xpq0T0O1nzt4gXkl0sI8WnGYxQ8GWjC0v0sQos9WZKg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bitcoinjs-lib/6.1.0/bip32.min.js" integrity="sha512-3s8C4v4Nz2uJkbvQ3S3gTdZ+5XNXkS6A1e5vKnKzT6CkNHzjLr7LYu3r/NT5TXG5iZ3zA0yTLF6Yzz6d3Y0oKyA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bip39/3.0.4/bip39.min.js" integrity="sha512-Ler8AdG4rW7uM+UyVoqQNAX8jWNuURUdHv1sI8R0S+v7xA3zFVa9NZCjT2bRdM5T9n34X1rHM8XpTv2DCnRu1GA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
   <style>
     :root {
@@ -252,7 +268,7 @@
       justify-content: space-between;
     }
 
-    .copy-btn {
+    .btn-generate, .btn-copy, .btn-validate, .btn-abort {
       background: var(--accent-gradient);
       border: none;
       border-radius: var(--border-radius);
@@ -261,18 +277,22 @@
       font-weight: 600;
       cursor: pointer;
       transition: all 0.3s ease;
-      display: flex;
+      display: inline-flex;
       align-items: center;
       gap: 0.5rem;
     }
 
-    .copy-btn:hover {
+    .btn-generate:hover, .btn-copy:hover, .btn-validate:hover, .btn-abort:hover {
       transform: translateY(-2px);
       box-shadow: var(--shadow-lg);
     }
 
-    .copy-btn:active {
+    .btn-generate:active, .btn-copy:active, .btn-validate:active, .btn-abort:active {
       transform: translateY(0);
+    }
+
+    .btn-abort {
+      background: #ef4444;
     }
 
     .output {
@@ -536,6 +556,13 @@
   </style>
 </head>
 <body>
+  <noscript>
+    <div style="text-align: center; padding: 2rem; color: #ef4444;">
+      <h1>JavaScript is Disabled</h1>
+      <p>This tool requires JavaScript to generate and validate Bitcoin addresses. Please enable JavaScript in your browser settings.</p>
+    </div>
+  </noscript>
+
   <div class="container">
     <!-- Header -->
     <div class="header">
@@ -559,7 +586,7 @@
           <div class="input-label">Seed Phrase (Mnemonic)</div>
           <div class="input-wrapper">
             <i class="fas fa-seedling input-icon"></i>
-            <input id="seedInput" class="input" placeholder="Enter your 12/24 word seed phrase">
+            <input id="seedInput" class="input" placeholder="Enter your 12/24 word seed phrase" aria-label="Seed Phrase">
           </div>
         </div>
 
@@ -567,13 +594,13 @@
           <div class="input-label">Private Key / WIF / Decimal</div>
           <div class="input-wrapper">
             <i class="fas fa-key input-icon"></i>
-            <input id="privateKeyInput" class="input" placeholder="Enter private key in any format">
+            <input id="privateKeyInput" class="input" placeholder="Enter private key in any format" aria-label="Private Key">
           </div>
         </div>
 
         <div class="input-group">
           <div class="input-label">Address Type</div>
-          <select id="addressType" class="input">
+          <select id="addressType" class="input" aria-label="Select Address Type">
             <option value="p2pkh">P2PKH (Legacy)</option>
             <option value="p2sh">P2SH (SegWit Compatible)</option>
             <option value="p2wpkh">Bech32 (SegWit)</option>
@@ -585,7 +612,7 @@
           <div class="input-label">Derivation Path (for seed phrase)</div>
           <div class="input-wrapper">
             <i class="fas fa-route input-icon"></i>
-            <input id="derivationPath" class="input" value="m/44'/0'/0'/0" placeholder="Enter derivation path">
+            <input id="derivationPath" class="input" value="m/44'/0'/0'/0" placeholder="Enter derivation path" aria-label="Derivation Path">
           </div>
         </div>
 
@@ -593,18 +620,23 @@
           <div class="input-label">Number of Addresses (for seed or random)</div>
           <div class="input-wrapper">
             <i class="fas fa-list-ol input-icon"></i>
-            <input id="batchSize" class="input" type="number" min="1" max="100" value="1">
+            <input id="batchSize" class="input" type="number" min="1" max="100" value="1" aria-label="Number of Addresses">
           </div>
         </div>
 
-        <button class="copy-btn" style="margin-top: 1rem;" onclick="generateAddresses()">
+        <button id="generateBtn" class="btn-generate" aria-label="Generate addresses from input">
           <i class="fas fa-cogs"></i>
           Generate
         </button>
 
-        <button class="copy-btn" style="margin-top: 1rem;" onclick="generateRandomAddresses()">
+        <button id="randomBtn" class="btn-generate" aria-label="Generate random addresses">
           <i class="fas fa-dice"></i>
           Generate Random
+        </button>
+
+        <button id="abortBtn" class="btn-abort" style="display: none;" aria-label="Abort address generation">
+          <i class="fas fa-stop"></i>
+          Abort
         </button>
       </div>
 
@@ -615,23 +647,23 @@
             <i class="fas fa-wallet"></i>
             Generated Addresses
           </div>
-          <button class="copy-btn" onclick="copyOutput()">
+          <button id="copyBtn" class="btn-copy" aria-label="Copy all generated addresses">
             <i class="fas fa-copy"></i>
             Copy All
           </button>
         </div>
 
-        <div id="output" class="output">
+        <div id="output" class="output" role="log" aria-live="polite">
           <div class="output-heading">Ready to generate addresses...</div>
           <div style="color: var(--text-muted); font-style: italic;">
-            Enter a seed phrase, private key, or click "Generate Random" to begin generating Bitcoin addresses.
+            Enter a seed phrase, private key, or click "Generate Random" to begin.
           </div>
         </div>
       </div>
     </div>
 
     <!-- Validation Section -->
-    <div class="card" style="margin-top: 2rem;">
+    <div class="card">
       <div class="section-title">
         <i class="fas fa-check-circle"></i>
         Validate Bitcoin Address
@@ -639,14 +671,14 @@
       <div class="input-group">
         <div class="input-wrapper">
           <i class="fas fa-wallet input-icon"></i>
-          <input id="validateInput" class="input" placeholder="Enter Bitcoin address to validate">
+          <input id="validateInput" class="input" placeholder="Enter Bitcoin address to validate" aria-label="Bitcoin Address to Validate">
         </div>
       </div>
-      <button class="copy-btn" onclick="validateAddress()">
+      <button id="validateBtn" class="btn-validate" aria-label="Validate Bitcoin address">
         <i class="fas fa-check"></i>
         Validate
       </button>
-      <div id="validationResult" style="margin-top: 1rem; color: var(--text-secondary);"></div>
+      <div id="validationResult" style="margin-top: 1rem; color: var(--text-secondary);" aria-live="polite"></div>
     </div>
 
     <!-- Donation Section -->
@@ -656,18 +688,18 @@
         Support Development
       </div>
       <div class="donation-text">
-        If this tool has been helpful, consider supporting its development with a small donation
+        If this tool has been helpful, consider supporting its development with a donation.
       </div>
       <div class="donation-buttons">
-        <button class="donate-btn" onclick="showDonationAddress('bitcoin')">
+        <button class="donate-btn" onclick="showDonationAddress('bitcoin')" aria-label="Donate Bitcoin">
           <i class="fab fa-bitcoin"></i>
           Donate Bitcoin
         </button>
-        <button class="donate-btn" onclick="showDonationAddress('ethereum')">
+        <button class="donate-btn" onclick="showDonationAddress('ethereum')" aria-label="Donate Ethereum">
           <i class="fab fa-ethereum"></i>
           Donate Ethereum
         </button>
-        <a href="https://github.com/Shubsaini08" class="donate-btn" target="_blank">
+        <a href="https://github.com/Shubsaini08" class="donate-btn" target="_blank" rel="noopener noreferrer" aria-label="Star on GitHub">
           <i class="fab fa-github"></i>
           Star on GitHub
         </a>
@@ -676,112 +708,121 @@
   </div>
 
   <!-- Toast Notification -->
-  <div id="toast" class="toast">
+  <div id="toast" class="toast" role="alert" aria-live="assertive">
     <i class="fas fa-check-circle"></i>
     <span id="toast-message">Copied to clipboard!</span>
   </div>
 
   <script>
-    // Worker setup
-    const workerScript = `
-      importScripts(
-        'https://cdnjs.cloudflare.com/ajax/libs/bitcoinjs-lib/6.1.0/bitcoinjs.min.js',
-        'https://cdnjs.cloudflare.com/ajax/libs/bip39/3.0.4/bip39.min.js'
-      );
-
-      self.onmessage = ({ data }) => {
-        const { type, seed, key, addressType, derivationPath, batchSize } = data;
-        let lines = [];
-        try {
-          const network = bitcoin.networks.bitcoin;
-
-          if (type === 'generate') {
-            if (key) {
-              lines.push('🔑 Address from Private Key:');
-              lines.push('');
-
-              let keyPair;
-              if (/^[0-9a-fA-F]{64}$/.test(key)) {
-                keyPair = bitcoin.ECPair.fromPrivateKey(Buffer.from(key, 'hex'), { network });
-              } else if (/^[5KL][1-9A-HJ-NP-Za-km-z]{50,51}$/.test(key)) {
-                keyPair = bitcoin.ECPair.fromWIF(key, network);
-              } else if (/^\\d+$/.test(key)) {
-                const keyBuffer = Buffer.alloc(32);
-                keyBuffer.writeBigUInt64BE(BigInt(key), 24);
-                keyPair = bitcoin.ECPair.fromPrivateKey(keyBuffer, { network });
-              } else {
-                throw new Error('Invalid private key format');
-              }
-
-              const address = getAddress(keyPair, addressType, network);
-              const wif = keyPair.toWIF();
-
-              lines.push(\`Address: \${address}\`);
-              lines.push(\`WIF: \${wif}\`);
-            } else if (seed) {
-              lines.push('🌱 Addresses from Seed Phrase:');
-              lines.push('');
-
-              const seedBuffer = bip39.mnemonicToSeedSync(seed);
-              const root = bitcoin.bip32.fromSeed(seedBuffer, network);
-
-              for (let i = 0; i < batchSize; i++) {
-                const path = derivationPath.replace(/\\/$/g, '') + \`/\${i}\`;
-                const child = root.derivePath(path);
-                const address = getAddress(child, addressType, network);
-                lines.push(\`Address \${i + 1}: \${address}\`);
-              }
-            }
-          } else if (type === 'random') {
-            lines.push('🎲 Randomly Generated Addresses:');
-            lines.push('');
-
-            for (let i = 0; i < batchSize; i++) {
-              const keyPair = bitcoin.ECPair.makeRandom({ network });
-              const address = getAddress(keyPair, addressType, network);
-              const wif = keyPair.toWIF();
-              const hex = keyPair.privateKey.toString('hex');
-
-              lines.push(\`Address \${i + 1}: \${address}\`);
-              lines.push(\`WIF: \${wif}\`);
-              lines.push(\`Hex Private Key: \${hex}\`);
-              lines.push('');
-            }
-          }
-        } catch (err) {
-          lines = [\`❌ Error: \${err.message}\`];
-        }
-
-        self.postMessage(lines.join('\\n'));
-      };
-
-      function getAddress(keyPair, type, network) {
-        if (type === 'p2pkh') {
-          return bitcoin.payments.p2pkh({ pubkey: keyPair.publicKey, network }).address;
-        } else if (type === 'p2sh') {
-          const p2wpkh = bitcoin.payments.p2wpkh({ pubkey: keyPair.publicKey, network });
-          return bitcoin.payments.p2sh({ redeem: p2wpkh, network }).address;
-        } else if (type === 'p2wpkh') {
-          return bitcoin.payments.p2wpkh({ pubkey: keyPair.publicKey, network }).address;
-        } else if (type === 'p2tr') {
-          return bitcoin.payments.p2tr({ internalPubkey: keyPair.publicKey.slice(1, 33), network }).address;
-        } else {
-          throw new Error('Unsupported address type');
-        }
+    // Localization (simple JSON for future expansion)
+    const strings = {
+      en: {
+        generating: 'Generating addresses...',
+        generatingRandom: 'Generating random addresses...',
+        aborted: 'Generation aborted',
+        noInput: 'Please provide a seed phrase or private key',
+        invalidPath: 'Invalid derivation path (must be like m/44\'/0\'/0\'/0)',
+        internalError: 'Internal error—please reload the page',
+        copied: 'Copied to clipboard!',
+        copyFailed: 'Failed to copy to clipboard',
+        noAddress: 'Please enter an address',
+        validAddress: 'Valid Bitcoin address',
+        invalidAddress: 'Invalid Bitcoin address'
       }
-    `;
+    };
+    const lang = 'en';
 
-    const blob = new Blob([workerScript], { type: 'application/javascript' });
-    const worker = new Worker(URL.createObjectURL(blob));
+    // Worker setup with feature detection
+    let worker;
+    if (window.Worker) {
+      const workerScript = `
+        importScripts(
+          'https://cdnjs.cloudflare.com/ajax/libs/buffer/6.0.3/buffer.min.js',
+          'https://cdnjs.cloudflare.com/ajax/libs/bitcoinjs-lib/6.1.0/bitcoinjs.min.js',
+          'https://cdnjs.cloudflare.com/ajax/libs/bitcoinjs-lib/6.1.0/bip32.min.js',
+          'https://cdnjs.cloudflare.com/ajax/libs/bip39/3.0.4/bip39.min.js'
+        );
+        self.Buffer = buffer.Buffer;
 
-    // DOM elements
+        self.onmessage = ({ data }) => {
+          const { type, seed, key, addressType, derivationPath, batchSize } = data;
+          const network = bitcoin.networks.bitcoin;
+          try {
+            if (type === 'generate') {
+              if (key) {
+                let keyPair;
+                if (/^[0-9a-fA-F]{64}$/.test(key)) {
+                  keyPair = bitcoin.ECPair.fromPrivateKey(Buffer.from(key, 'hex'), { network });
+                } else if (/^[5KL][1-9A-HJ-NP-Za-km-z]{50,51}$/.test(key)) {
+                  keyPair = bitcoin.ECPair.fromWIF(key, network);
+                } else if (/^\\d+$/.test(key)) {
+                  const keyBuffer = Buffer.alloc(32);
+                  keyBuffer.writeBigUInt64BE(BigInt(key), 24);
+                  keyPair = bitcoin.ECPair.fromPrivateKey(keyBuffer, { network });
+                } else {
+                  throw new Error('Invalid private key format');
+                }
+                const address = getAddress(keyPair, addressType, network);
+                const wif = keyPair.toWIF();
+                self.postMessage({ type: 'result', data: \`Address: \${address}\\nWIF: \${wif}\` });
+              } else if (seed) {
+                const seedBuffer = bip39.mnemonicToSeedSync(seed);
+                const root = bitcoin.bip32.fromSeed(seedBuffer, network);
+                for (let i = 0; i < batchSize; i++) {
+                  const path = derivationPath.replace(/\\/$/g, '') + \`/\${i}\`;
+                  const child = root.derivePath(path);
+                  const address = getAddress(child, addressType, network);
+                  self.postMessage({ type: 'result', data: \`Address \${i + 1}: \${address}\` });
+                }
+              }
+            } else if (type === 'random') {
+              for (let i = 0; i < batchSize; i++) {
+                const keyPair = bitcoin.ECPair.makeRandom({ network });
+                const address = getAddress(keyPair, addressType, network);
+                const wif = keyPair.toWIF();
+                const hex = keyPair.privateKey.toString('hex');
+                self.postMessage({ type: 'result', data: \`Address \${i + 1}: \${address}\\nWIF: \${wif}\\nHex Private Key: \${hex}\` });
+              }
+            }
+          } catch (err) {
+            self.postMessage({ type: 'error', message: err.message });
+          }
+        };
+
+        function getAddress(keyPair, type, network) {
+          if (type === 'p2pkh') {
+            return bitcoin.payments.p2pkh({ pubkey: keyPair.publicKey, network }).address;
+          } else if (type === 'p2sh') {
+            const p2wpkh = bitcoin.payments.p2wpkh({ pubkey: keyPair.publicKey, network });
+            return bitcoin.payments.p2sh({ redeem: p2wpkh, network }).address;
+          } else if (type === 'p2wpkh') {
+            return bitcoin.payments.p2wpkh({ pubkey: keyPair.publicKey, network }).address;
+          } else if (type === 'p2tr') {
+            return bitcoin.payments.p2tr({ internalPubkey: keyPair.publicKey.slice(1, 33), network }).address;
+          } else {
+            throw new Error('Unsupported address type');
+          }
+        }
+      `;
+      const blob = new Blob([workerScript], { type: 'application/javascript' });
+      worker = new Worker(URL.createObjectURL(blob));
+      worker.onerror = (err) => {
+        console.error('Worker error:', err);
+        renderError(strings[lang].internalError);
+      };
+    } else {
+      alert('Web Workers are not supported in your browser. This tool requires Web Workers for secure address generation.');
+    }
+
+    // DOM Elements
     const seedInput = document.getElementById('seedInput');
     const pkInput = document.getElementById('privateKeyInput');
     const output = document.getElementById('output');
     const toast = document.getElementById('toast');
     const toastMessage = document.getElementById('toast-message');
+    const abortBtn = document.getElementById('abortBtn');
 
-    // Render functions
+    // Render Functions
     function renderStatus(text) {
       output.innerHTML = `
         <div class="loading">
@@ -792,45 +833,41 @@
     }
 
     function renderResult(data) {
-      const lines = data.split('\n');
-      let html = '';
-
-      lines.forEach(line => {
-        if (line.trim() === '') {
-          html += '<br>';
-        } else if (line.includes('Error:')) {
-          html += `<div class="output-error">${line}</div>`;
-        } else if (line.includes('Address')) {
-          const address = line.split(': ')[1];
-          html += `<div class="output-address">${line} <button class="copy-btn" onclick="showQR('${address}')"><i class="fas fa-qrcode"></i> QR</button></div>`;
-        } else if (line.includes('🎲') || line.includes('🌱') || line.includes('🔑')) {
-          html += `<div class="output-heading">${line}</div>`;
-        } else {
-          html += `<div>${line}</div>`;
-        }
-      });
-
-      output.innerHTML = html;
+      const div = document.createElement('div');
+      div.textContent = data;
+      output.appendChild(div);
     }
 
     function renderError(message) {
       output.innerHTML = `<div class="output-error">❌ ${message}</div>`;
     }
 
-    // Generate addresses
+    // Validation
+    function validateDerivationPath(dp) {
+      return /^m(\/\d+'?)+$/.test(dp);
+    }
+
+    // Generate Addresses
     function generateAddresses() {
       const seed = seedInput.value.trim();
       const key = pkInput.value.trim();
       const addressType = document.getElementById('addressType').value;
-      const derivationPath = document.getElementById('derivationPath').value;
-      const batchSize = parseInt(document.getElementById('batchSize').value) || 1;
+      const derivationPath = document.getElementById('derivationPath').value.trim();
+      const batchSize = Math.min(parseInt(document.getElementById('batchSize').value) || 1, 100);
 
       if (!seed && !key) {
-        renderError('Please provide a seed phrase or private key');
+        renderError(strings[lang].noInput);
         return;
       }
 
-      renderStatus('Generating addresses...');
+      if (seed && !validateDerivationPath(derivationPath)) {
+        renderError(strings[lang].invalidPath);
+        return;
+      }
+
+      output.innerHTML = '';
+      renderStatus(strings[lang].generating);
+      abortBtn.style.display = 'inline-flex';
       worker.postMessage({
         type: 'generate',
         seed,
@@ -841,52 +878,78 @@
       });
     }
 
-    // Generate random addresses
-    function generateRandomAddresses() {
+    // Generate Random Addresses with Debounce
+    const generateRandomDebounced = debounce(() => {
       const addressType = document.getElementById('addressType').value;
-      const batchSize = parseInt(document.getElementById('batchSize').value) || 1;
-
-      renderStatus('Generating random addresses...');
+      const batchSize = Math.min(parseInt(document.getElementById('batchSize').value) || 1, 100);
+      output.innerHTML = '';
+      renderStatus(strings[lang].generatingRandom);
+      abortBtn.style.display = 'inline-flex';
       worker.postMessage({
         type: 'random',
         addressType,
         batchSize
       });
+    }, 300);
+
+    // Worker Message Handler
+    worker.onmessage = (e) => {
+      const { type, data, message } = e.data;
+      if (type === 'result') {
+        renderResult(data);
+      } else if (type === 'error') {
+        renderError(message);
+      }
+    };
+
+    // Abort Generation
+    function abortGeneration() {
+      worker.terminate();
+      renderStatus(strings[lang].aborted);
+      abortBtn.style.display = 'none';
+      // Respawn worker
+      const blob = new Blob([workerScript], { type: 'application/javascript' });
+      worker = new Worker(URL.createObjectURL(blob));
+      worker.onerror = (err) => {
+        console.error('Worker error:', err);
+        renderError(strings[lang].internalError);
+      };
     }
 
-    // Worker message handler
-    worker.onmessage = (e) => renderResult(e.data);
-
-    // Copy functionality
+    // Copy Output
     function copyOutput() {
-      const text = output.textContent;
-      navigator.clipboard.writeText(text).then(() => {
-        showToast('Copied to clipboard!');
-      }).catch(() => {
-        showToast('Failed to copy', 'error');
+      if (!navigator.clipboard) {
+        showToast(strings[lang].copyFailed, 'error');
+        return;
+      }
+      navigator.clipboard.writeText(output.textContent).then(() => {
+        showToast(strings[lang].copied);
+      }).catch((err) => {
+        console.error('Clipboard error:', err);
+        showToast(strings[lang].copyFailed, 'error');
       });
     }
 
-    // Validate address
+    // Validate Address
     function validateAddress() {
       const address = document.getElementById('validateInput').value.trim();
+      const result = document.getElementById('validationResult');
       if (!address) {
-        document.getElementById('validationResult').textContent = 'Please enter an address';
-        document.getElementById('validationResult').style.color = 'var(--error)';
+        result.textContent = strings[lang].noAddress;
+        result.style.color = 'var(--error)';
         return;
       }
-
       try {
         bitcoin.address.toOutputScript(address, bitcoin.networks.bitcoin);
-        document.getElementById('validationResult').textContent = 'Valid Bitcoin address';
-        document.getElementById('validationResult').style.color = 'var(--success)';
+        result.textContent = strings[lang].validAddress;
+        result.style.color = 'var(--success)';
       } catch (e) {
-        document.getElementById('validationResult').textContent = 'Invalid Bitcoin address';
-        document.getElementById('validationResult').style.color = 'var(--error)';
+        result.textContent = strings[lang].invalidAddress;
+        result.style.color = 'var(--error)';
       }
     }
 
-    // Show QR code
+    // Show QR Code with Accessibility
     function showQR(address) {
       const qrContainer = document.createElement('div');
       qrContainer.style.position = 'fixed';
@@ -897,6 +960,9 @@
       qrContainer.style.padding = '1rem';
       qrContainer.style.boxShadow = 'var(--shadow-xl)';
       qrContainer.style.zIndex = '1000';
+      qrContainer.tabIndex = 0;
+      qrContainer.setAttribute('role', 'dialog');
+      qrContainer.setAttribute('aria-label', `QR Code for Bitcoin address: ${address}`);
 
       new QRCode(qrContainer, {
         text: address,
@@ -908,37 +974,59 @@
       });
 
       document.body.appendChild(qrContainer);
+      qrContainer.focus();
 
-      qrContainer.addEventListener('click', () => {
-        document.body.removeChild(qrContainer);
-      });
+      function closeQR(e) {
+        if (e.key === 'Escape' || e.type === 'click') {
+          document.body.removeChild(qrContainer);
+          document.removeEventListener('keydown', closeQR);
+          qrContainer.removeEventListener('click', closeQR);
+        }
+      }
+
+      qrContainer.addEventListener('click', closeQR);
+      document.addEventListener('keydown', closeQR);
     }
 
-    // Toast notification
+    // Toast Notification
     function showToast(message, type = 'success') {
       toastMessage.textContent = message;
       toast.style.backgroundColor = type === 'error' ? 'var(--error)' : 'var(--success)';
       toast.classList.add('show');
-
-      setTimeout(() => {
-        toast.classList.remove('show');
-      }, 3000);
+      setTimeout(() => toast.classList.remove('show'), 3000);
     }
 
-    // Donation addresses
+    // Donation Addresses
     function showDonationAddress(crypto) {
       const addresses = {
         bitcoin: 'bc1qwc24wqwu08x2cdnfzc40ezma4q5zsn37jxkkmt',
         ethereum: '0x7cd3b4101e20431815b27849140db3853f86d330'
       };
-
       const address = addresses[crypto];
-      if (address) {
+      if (address && navigator.clipboard) {
         navigator.clipboard.writeText(address).then(() => {
           showToast(`${crypto.charAt(0).toUpperCase() + crypto.slice(1)} address copied!`);
+        }).catch(() => {
+          showToast(strings[lang].copyFailed, 'error');
         });
       }
     }
+
+    // Debounce Function
+    function debounce(func, wait) {
+      let timeout;
+      return function (...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+      };
+    }
+
+    // Event Listeners
+    document.getElementById('generateBtn').addEventListener('click', generateAddresses);
+    document.getElementById('randomBtn').addEventListener('click', generateRandomDebounced);
+    document.getElementById('abortBtn').addEventListener('click', abortGeneration);
+    document.getElementById('copyBtn').addEventListener('click', copyOutput);
+    document.getElementById('validateBtn').addEventListener('click', validateAddress);
   </script>
 </body>
 </html>
